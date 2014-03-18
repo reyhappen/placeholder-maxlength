@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>兼容input、textarea的占位符+maxlength及实时捕获用户输入</title>
+<style>
+*{margin:0;padding:0;}
+p span{color:#f00;}
+div{height:100px;}
+input{border:1px solid #ccc;}
+textarea{border:1px solid #ccc;}
+#bigdiv{height:800px;}
+</style>
+</head>
+
+<body>
+<div><input type="text" id="input" value="" placeholder="我这里只能输入数字" /></div>
+<div><input type="email" id="email" value="" style="width:200px;" placeholder="email" /></div>
+<div><input type="password" id="pass" value="" style="width:200px" placeholder="密码框" /></div>
+<div><textarea id="tarea" placeholder="文本域" maxlength="10"></textarea></div>
+<p>您还可以输入<span id="maxlen">10</span>个字符</p>
+<script>
+/*
+	@function	IE6-9 placeholder与textarea的maxlength修复，并提供值改变时的回调函数供实时捕捉用户输入
+				fixed oncontextmenu delete or cut and backspace
+	@param		id: 必选参数，元素的id
+	@param		fn: 可选参数，实时响应的回调函数
+	@return		通过id获取的元素
+	@note		原理说明：IE6-9动态生成另一个一样的背景透明的输入框叠加到本输入框下层，通过selectionchange、onpropertychange事件与keyup等事件实现实时捕捉，现代谷歌火狐内核的浏览器直接支持placeholder与maxlength，这里用input事件实现了实时输入捕捉
+	@inadequate	不足：影响了页面结构，未实现事件代理，动态元素必须先插入文档之后再执行此函数实现动态添加的元素placeholder与maxlength修复；IE6-9 onpropertychange也能捕捉到js设置输入框值改变的事件，但现代谷歌火狐内核的浏览器捕捉不到
+*/
+function bind(id, fn){
+	var obj = id.nodeType ? id : document.getElementById(id),
+		inputClone = document.createElement(obj.nodeName == 'INPUT' ? 'INPUT' : 'TEXTAREA'),
+		advancedBrowser = 'placeholder' in inputClone;
+	if(advancedBrowser){
+		obj.addEventListener("input",function(e){
+			fn && fn.call(this, e);
+		},false);
+	}else{
+		//IE6-9
+		var docElem = document.documentElement,
+			placeholder = obj.getAttributeNode('placeholder'),
+			curstyle = obj.currentStyle;
+		placeholder = placeholder ? placeholder.nodeValue : '';
+		if(placeholder){
+			//初始化inputClone
+			inputClone.style.cssText = obj.style.cssText + ';position:absolute;color:graytext;background-color:transparent;border-top-color:transparent;border-right-color:transparent;border-bottom-color:transparent;border-left-color:transparent;';
+			inputClone.className = obj.className;
+			inputClone.disabled = true;
+			if(obj.value === '' || obj.defaultValue === ''){
+				inputClone.value = placeholder;
+			}
+			
+			
+			if(curstyle.position == 'static'){
+				obj.style.position = 'relative';
+			}else{
+				if(typeof curstyle.zIndex == 'number' && curstyle.zIndex > 0){
+					inputClone.style.zIndex = --curstyle.zIndex;
+				}else{
+					inputClone.style.zIndex = 0;
+				}
+			}
+			inputClone.style.left = obj.offsetLeft;
+			inputClone.style.top = obj.offsetTop;
+		}
+		var IEwatchChange = function(e){
+			var e = window.event || e,
+				maxLen = obj.getAttributeNode('maxlength'),
+				maxLen = maxLen && parseInt(maxLen.nodeValue);
+			if(e.type == 'selectionchange' || e.propertyName == "value"){
+				var objVal = obj.value;
+				if(placeholder){
+					if(objVal === '') inputClone.value = placeholder;
+					else inputClone.value = '';
+				}
+				//input的maxlength所有浏览器都支持，只有TEXTAREA不支持
+				if(maxLen && obj.nodeName == 'TEXTAREA' && objVal.length > maxLen){
+					obj.value = objVal.substring(0, maxLen);
+				}
+				fn && fn.call(obj, e);
+			}
+		};
+		//现代型事件绑定
+		obj.attachEvent("onfocus", function(){
+			//主要解决IE9中oncontextmenu delete or cut and backspace事件在onpropertychange时不响应
+			document.attachEvent("onselectionchange", IEwatchChange);
+		});
+		
+		obj.attachEvent("onpropertychange", IEwatchChange);
+		
+		obj.attachEvent("onblur", function(){
+			document.detachEvent("onselectionchange", IEwatchChange);
+		});
+		
+		//事件全部绑定后再插入，尽量减少对dom重复渲染
+		if(placeholder){
+			obj.style.backgroundColor = 'transparent';
+			//IE6,8,9 input在将输入框背景设成透明时无法聚焦bug修复
+			obj.style.backgroundImage = 'url(about:blank)';
+			obj.parentNode.insertBefore(inputClone, obj);
+		}
+	}
+	return obj;
+}
+
+//测试用例demo，所有浏览器都兼容
+
+//纯数字输入框
+bind('input', function(e){
+	var oldVal = this.value;
+	if(/\D/g.test(oldVal)){
+		this.value = oldVal.replace(/\D/g, '');
+	}
+});
+
+//实时响应用户输入，提示用户还能输入多少字符
+var maxlen = document.getElementById('maxlen');
+bind(document.getElementById('tarea'), function(e){
+	maxlen.innerHTML = parseInt(this.getAttributeNode('maxlength').nodeValue) - this.value.length;
+});
+/*
+//中文字符限制版：中文在谷歌和opera浏览器下会把输入的字符码直接输入到输入框，导致上面实时响应有负值的情况
+var maxlenObj = document.getElementById('tarea'), maxLen = parseInt(maxlenObj.getAttributeNode("maxlength").nodeValue), counter = document.getElementById('maxlen');
+bind(maxlenObj, function(e){
+	var text = this.value || this.defaultValue || '', len = text.length,
+	overplus = maxLen - len;
+	if( overplus < 0 ){
+		this.value = text.slice(0, maxLen);
+		overplus = 0;
+	}
+	counter.innerHTML = overplus;
+});
+*/
+//密码框测试
+bind('pass');
+//低版本不支持type=email,number等类型的输入框测试
+bind('email');
+</script>
+</body>
+</html>
