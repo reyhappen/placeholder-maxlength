@@ -48,12 +48,14 @@ function watchVal(id, simpselector, fn){
 				}
 			}
 			obj.attachEvent("onfocus", function(e){
-				document.attachEvent("onselectionchange", IEwatchChange);
 				obj.attachEvent("onpropertychange", IEwatchChange);
+				//for IE9
+				obj.addEventListener && document.attachEvent("onselectionchange", IEwatchChange);
 			});
 			obj.attachEvent("onblur", function(e){
-				document.detachEvent("onselectionchange", IEwatchChange);
 				obj.detachEvent("onpropertychange", IEwatchChange);
+				//for IE9
+				obj.addEventListener && document.detachEvent("onselectionchange", IEwatchChange);
 			});
 		}else{
 			obj.addEventListener("input", fn, true);
@@ -75,15 +77,17 @@ function watchVal(id, simpselector, fn){
 			obj.attachEvent("onfocusin", function(e){
 				var e = window.event, t = e.srcElement;
 				if(t.tagName == 'INPUT' || t.tagName == 'TEXTAREA' && clazzReg.test(t.className)){
-					document.attachEvent("onselectionchange", IEwatchChange);
 					t.attachEvent("onpropertychange", IEwatchChange);
+					//for IE9
+					document.addEventListener && document.attachEvent("onselectionchange", IEwatchChange);
 				}
 			});
 			obj.attachEvent("onfocusout", function(e){
 				var e = window.event, t = e.srcElement;
 				if(t.tagName == 'INPUT' || t.tagName == 'TEXTAREA' && clazzReg.test(t.className)){
-					document.detachEvent("onselectionchange", IEwatchChange);
 					t.detachEvent("onpropertychange", IEwatchChange);
+					//for IE9
+					document.addEventListener && document.detachEvent("onselectionchange", IEwatchChange);
 				}
 			});
 		}else{
