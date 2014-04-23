@@ -62,8 +62,8 @@ function bind(id, fn){
 					inputClone.style.zIndex = 0;
 				}
 			}
-			inputClone.style.left = obj.offsetLeft;
-			inputClone.style.top = obj.offsetTop;
+			inputClone.style.left = obj.offsetLeft+'px';
+			inputClone.style.top = obj.offsetTop+'px';
 		}
 		var IEwatchChange = function(e){
 			var e = window.event || e,
