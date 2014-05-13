@@ -15,7 +15,7 @@ textarea{border:1px solid #ccc;}
 
 <body>
 <div><input type="text" id="input" value="" placeholder="我这里只能输入数字" /></div>
-<div id="emailwrap"><input class="input" type="email" id="email" value="" style="width:200px;" placeholder="email" /><input class="input" type="text" value="" style="width:100px;" placeholder="email" /></div>
+<div id="emailwrap"><input class="input" type="email" id="email" value="" style="width:200px;" placeholder="email" /><span id="sametxt"></span><input class="input" type="text" value="" style="width:100px;" placeholder="email" /></div>
 <div><input type="password" id="pass" value="" style="width:200px" placeholder="密码框" /></div>
 <div><textarea id="tarea" placeholder="文本域" maxlength="10"></textarea></div>
 <p>您还可以输入<span id="maxlen">10</span>个字符</p>
@@ -32,11 +32,14 @@ textarea{border:1px solid #ccc;}
 ************************************************/
 function watchVal(id, simpselector, fn){
 	var fn = fn || function(e){},
-		obj = /INPUT|TEXTAREA/i.test(id.nodeName) ? id : document.getElementById(id),
+		obj = /INPUT|TEXTAREA/i.test(id.nodeName) ? id : id.nodeName ? id : document.getElementById(id),
 		IE69 = !('placeholder' in document.createElement('INPUT')),
 		IE9 = IE69 && window.addEventListener,
-		simpselector = simpselector.replace('.',''),
-		clazzReg = new RegExp('(\\s|^)' + simpselector +'(\\s|$)');
+		simpselector = typeof simpselector === 'string' && simpselector.replace('.',''),
+		clazzReg = new RegExp('(\\s|^)' + simpselector +'(\\s|$)'),
+		testTarget = function(t){
+			return /INPUT|TEXTAREA/i.test(t.tagName) && clazzReg.test(t.className);
+		};
 	
 	if(typeof simpselector === 'function'){
 		//实时输入的直接实现
@@ -50,16 +53,14 @@ function watchVal(id, simpselector, fn){
 			}
 			obj.attachEvent("onfocus", function(e){
 				obj.attachEvent("onpropertychange", IEwatchChange);
-				//for IE9
-				obj.addEventListener && document.attachEvent("onselectionchange", IEwatchChange);
 			});
 			obj.attachEvent("onblur", function(e){
 				obj.detachEvent("onpropertychange", IEwatchChange);
-				//for IE9
-				obj.addEventListener && document.detachEvent("onselectionchange", IEwatchChange);
 			});
+			obj.detachEvent("onselectionchange", IEwatchChange);
 		}else{
-			obj.addEventListener("input", fn, true);
+			obj.addEventListener("input", fn, false);
+			obj.addEventListener("drop", fn, false);
 		}
 	}else{
 		//实时输入的代理实现
@@ -77,33 +78,43 @@ function watchVal(id, simpselector, fn){
 			}
 			obj.attachEvent("onfocusin", function(e){
 				var e = window.event, t = e.srcElement;
-				if(t.tagName == 'INPUT' || t.tagName == 'TEXTAREA' && clazzReg.test(t.className)){
+				if(testTarget(t)){
 					t.attachEvent("onpropertychange", IEwatchChange);
-					//for IE9
-					IE9 && document.attachEvent("onselectionchange", IEwatchChange);
 				}
 			});
 			obj.attachEvent("onfocusout", function(e){
 				var e = window.event, t = e.srcElement;
-				if(t.tagName == 'INPUT' || t.tagName == 'TEXTAREA' && clazzReg.test(t.className)){
+				if(testTarget(t)){
 					t.detachEvent("onpropertychange", IEwatchChange);
-					//for IE9
-					IE9 && document.detachEvent("onselectionchange", IEwatchChange);
+				}
+			});
+			document.attachEvent("onselectionchange", function(){
+				var t = document.activeElement, e = window.event;
+				if(testTarget(t)){
+					e.target = t;
+					fn.call(t, e);
 				}
 			});
 		}else{
 			obj.addEventListener("focus", function(e){
 				var t = e.target;
-				if(t.tagName == 'INPUT' || t.tagName == 'TEXTAREA' && t.classList.contains(simpselector)){
+				if(testTarget(t)){
 					t.addEventListener("input", fn, false);
 				}
 			}, true);
 			obj.addEventListener("blur", function(e){
 				var t = e.target;
-				if(t.tagName == 'INPUT' || t.tagName == 'TEXTAREA' && t.classList.contains(simpselector)){
+				if(testTarget(t)){
 					t.removeEventListener("input", fn, false);
 				}
 			}, true);
+			document.addEventListener("drop", function(e){
+				var t = e.target;
+				if(testTarget(t)){
+					e.target = t;
+					fn.call(t, e);
+				}
+			}, false);
 		}
 	}
 	return obj;
@@ -112,19 +123,22 @@ function watchVal(id, simpselector, fn){
 //测试用例demo，所有浏览器都兼容
 
 //纯数字输入框
-/*watchVal('input', function(e){
+watchVal('input', function(e){
 	var oldVal = this.value;
 	if(/\D/g.test(oldVal)){
-		this.value = oldVal.replace(/\D/g, '');
-	}
-});*/
-watchVal('emailwrap', '.input', function(e){
-	var oldVal = this.value || this.defaultValue;
-	console.dir(this)
-	if(/\D/g.test(oldVal)){
+		console.dir(this);
 		this.value = oldVal.replace(/\D/g, '');
 	}
 });
+var sametxt = document.getElementById("sametxt");
+/*watchVal(document.getElementById('emailwrap'), '.input', function(e){
+	console.dir(this);
+	var oldVal = this.value || this.defaultValue;
+	if(/\D/g.test(oldVal)){
+		this.value = oldVal.replace(/\D/g, '');
+		sametxt.innerHTML = this.value;
+	}
+});*/
 
 //实时响应用户输入，提示用户还能输入多少字符
 var maxlen = document.getElementById('maxlen');
