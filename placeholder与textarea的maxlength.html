@@ -30,6 +30,7 @@ textarea{border:1px solid #ccc;}
 	@inadequate	不足：影响了页面结构，未实现事件代理，动态元素必须先插入文档之后再执行此函数实现动态添加的元素placeholder与maxlength修复；IE6-9 onpropertychange也能捕捉到js设置输入框值改变的事件，但现代谷歌火狐内核的浏览器捕捉不到
 */
 function bind(id, fn){
+	//var obj = id.nodeType == 1 ? id : id.jQuery ? id[0] : document.getElementById(id),
 	var obj = id.nodeType == 1 ? id : document.getElementById(id),
 		inputClone = document.createElement(obj.nodeName == 'INPUT' ? 'INPUT' : 'TEXTAREA'),
 		advancedBrowser = 'placeholder' in inputClone;
