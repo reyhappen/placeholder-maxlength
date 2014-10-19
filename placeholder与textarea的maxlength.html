@@ -42,12 +42,13 @@ function iChange(id, fn){
 	}else{
 		//IE6-9
 		var docElem = document.documentElement,
+			inpCloneStyle = inputClone.style,
 			placeholder = obj.getAttributeNode('placeholder'),
 			curstyle = obj.currentStyle;
 		placeholder = placeholder ? placeholder.nodeValue : '';
 		if(placeholder){
 			//初始化inputClone
-			inputClone.style.cssText = obj.style.cssText + ';position:absolute;color:graytext;background-color:transparent;border-top-color:transparent;border-right-color:transparent;border-bottom-color:transparent;border-left-color:transparent;';
+			inpCloneStyle.cssText = obj.style.cssText + ';position:absolute;color:graytext;background-color:transparent;border-top-color:transparent;border-right-color:transparent;border-bottom-color:transparent;border-left-color:transparent;';
 			inputClone.className = obj.className;
 			inputClone.disabled = true;
 			if(obj.value === '' || obj.defaultValue === ''){
@@ -59,13 +60,13 @@ function iChange(id, fn){
 				obj.style.position = 'relative';
 			}else{
 				if(typeof curstyle.zIndex == 'number' && curstyle.zIndex > 0){
-					inputClone.style.zIndex = --curstyle.zIndex;
+					inpCloneStyle.zIndex = --curstyle.zIndex;
 				}else{
-					inputClone.style.zIndex = 0;
+					inpCloneStyle.zIndex = 0;
 				}
 			}
-			inputClone.style.left = obj.offsetLeft+'px';
-			inputClone.style.top = obj.offsetTop+'px';
+			inpCloneStyle.left = obj.offsetLeft+'px';
+			inpCloneStyle.top = obj.offsetTop+'px';
 		}
 		var IEwatchChange = function(e){
 			var e = window.event || e,
@@ -87,6 +88,9 @@ function iChange(id, fn){
 		if(!window.XMLHttpRequest){
 			//IE6无法聚焦修复
 			obj.attachEvent('onclick',function(){
+				obj.focus();
+			});
+			inputClone.attachEvent('onclick',function(){
 				obj.focus();
 			});
 		}
