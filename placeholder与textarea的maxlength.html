@@ -84,6 +84,12 @@ function iChange(id, fn){
 				fn && fn.call(obj, e);
 			}
 		};
+		if(!window.XMLHttpRequest){
+			//IE6无法聚焦修复
+			obj.attachEvent('onclick',function(){
+				obj.focus();
+			});
+		}
 		//现代型事件绑定
 		obj.attachEvent("onfocus", function(){
 			//主要解决IE9中oncontextmenu delete or cut and backspace事件在onpropertychange时不响应
