@@ -10,6 +10,7 @@ div{height:100px;}
 input{border:1px solid #ccc;}
 textarea{border:1px solid #ccc;}
 #bigdiv{height:800px;}
+#input{ime-mode:disabled;}
 </style>
 </head>
 
@@ -29,7 +30,7 @@ textarea{border:1px solid #ccc;}
 	@note		原理说明：IE6-9动态生成另一个一样的背景透明的输入框叠加到本输入框下层，通过selectionchange、onpropertychange事件与keyup等事件实现实时捕捉，现代谷歌火狐内核的浏览器直接支持placeholder与maxlength，这里用input事件实现了实时输入捕捉
 	@inadequate	不足：影响了页面结构，未实现事件代理，动态元素必须先插入文档之后再执行此函数实现动态添加的元素placeholder与maxlength修复；IE6-9 onpropertychange也能捕捉到js设置输入框值改变的事件，但现代谷歌火狐内核的浏览器捕捉不到
 */
-function bind(id, fn){
+function iChange(id, fn){
 	//var obj = id.nodeType == 1 ? id : id.jQuery ? id[0] : document.getElementById(id),
 	var obj = id.nodeType == 1 ? id : document.getElementById(id),
 		inputClone = document.createElement(obj.nodeName == 'INPUT' ? 'INPUT' : 'TEXTAREA'),
@@ -109,7 +110,7 @@ function bind(id, fn){
 //测试用例demo，所有浏览器都兼容
 
 //纯数字输入框
-bind('input', function(e){
+iChange('input', function(e){
 	var oldVal = this.value;
 	if(/\D/g.test(oldVal)){
 		this.value = oldVal.replace(/\D/g, '');
@@ -118,13 +119,13 @@ bind('input', function(e){
 
 //实时响应用户输入，提示用户还能输入多少字符
 var maxlen = document.getElementById('maxlen');
-bind(document.getElementById('tarea'), function(e){
+iChange(document.getElementById('tarea'), function(e){
 	maxlen.innerHTML = parseInt(this.getAttributeNode('maxlength').nodeValue) - this.value.length;
 });
 /*
 //中文字符限制版：中文在谷歌和opera浏览器下会把输入的字符码直接输入到输入框，导致上面实时响应有负值的情况
 var maxlenObj = document.getElementById('tarea'), maxLen = parseInt(maxlenObj.getAttributeNode("maxlength").nodeValue), counter = document.getElementById('maxlen');
-bind(maxlenObj, function(e){
+iChange(maxlenObj, function(e){
 	var text = this.value || this.defaultValue || '', len = text.length,
 	overplus = maxLen - len;
 	if( overplus < 0 ){
@@ -135,9 +136,9 @@ bind(maxlenObj, function(e){
 });
 */
 //密码框测试
-bind('pass');
+iChange('pass');
 //低版本不支持type=email,number等类型的输入框测试
-bind('email');
+iChange('email');
 </script>
 </body>
 </html>
