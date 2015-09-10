@@ -27,7 +27,8 @@ textarea{border:1px solid #ccc;}
 	@param		id: 必选参数，元素的id
 	@param		fn: 可选参数，实时响应的回调函数
 	@return		通过id获取的元素
-	@note		原理说明：IE6-9动态生成另一个一样的背景透明的输入框叠加到本输入框下层，通过selectionchange、onpropertychange事件与keyup等事件实现实时捕捉，现代谷歌火狐内核的浏览器直接支持placeholder与maxlength，这里用input事件实现了实时输入捕捉
+	@note		原理说明：IE6-9动态生成另一个一样的背景透明的输入框叠加到本输入框下层，通过selectionchange、onpropertychange事件与keyup等事件实现实时捕捉，现代谷歌火狐内核的浏览器直接支持placeholder与maxlength，这里用input事件实现了实时输入捕捉；
+				注意点：布局时应在要应用的表单元素父节点上进行相对定位
 	@inadequate	不足：影响了页面结构，未实现事件代理，动态元素必须先插入文档之后再执行此函数实现动态添加的元素placeholder与maxlength修复；IE6-9 onpropertychange也能捕捉到js设置输入框值改变的事件，但现代谷歌火狐内核的浏览器捕捉不到
 */
 function iChange(id, fn){
