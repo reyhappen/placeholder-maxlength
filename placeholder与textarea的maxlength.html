@@ -32,23 +32,27 @@ textarea{border:1px solid #ccc;}
 */
 function iChange(id, fn){
 	//var obj = id.nodeType == 1 ? id : id.jQuery ? id[0] : document.getElementById(id),
-	var obj = id.nodeType == 1 ? id : document.getElementById(id),
-		inputClone = document.createElement(obj.nodeName == 'INPUT' ? 'INPUT' : 'TEXTAREA'),
-		advancedBrowser = 'placeholder' in inputClone;
+	var obj = id.nodeType == 1 ? id : document.getElementById(id);
+	var doc = obj.document || obj.ownerDocument || document,
+		win = doc.defaultView || doc.parentWindow || window,
+		inputClone = doc.createElement(obj.nodeName == 'INPUT' ? 'INPUT' : 'TEXTAREA'),
+		advancedBrowser = 'placeholder' in inputClone,
+		oldValAttr = 'oldvalue' + (+new Date());
 	if(advancedBrowser){
 		obj.addEventListener("input",function(e){
 			fn && fn.call(this, e);
 		},false);
 	}else{
 		//IE6-9
-		var docElem = document.documentElement,
+		var docElem = doc.documentElement,
 			inpCloneStyle = inputClone.style,
 			placeholder = obj.getAttributeNode('placeholder'),
-			curstyle = obj.currentStyle;
+			curstyle = obj.currentStyle,
+			objstyle = obj.style;
 		placeholder = placeholder ? placeholder.nodeValue : '';
 		if(placeholder){
 			//初始化inputClone
-			inpCloneStyle.cssText = obj.style.cssText + ';position:absolute;color:graytext;background-color:transparent;border-top-color:transparent;border-right-color:transparent;border-bottom-color:transparent;border-left-color:transparent;';
+			inpCloneStyle.cssText = objstyle.cssText + ';position:absolute;color:graytext;background-color:transparent;border-top-color:transparent;border-right-color:transparent;border-bottom-color:transparent;border-left-color:transparent;';
 			inputClone.className = obj.className;
 			inputClone.disabled = true;
 			if(obj.value === '' || obj.defaultValue === ''){
@@ -57,7 +61,7 @@ function iChange(id, fn){
 			
 			
 			if(curstyle.position == 'static'){
-				obj.style.position = 'relative';
+				objstyle.position = 'relative';
 			}else{
 				if(typeof curstyle.zIndex == 'number' && curstyle.zIndex > 0){
 					inpCloneStyle.zIndex = --curstyle.zIndex;
@@ -67,25 +71,30 @@ function iChange(id, fn){
 			}
 			inpCloneStyle.left = obj.offsetLeft+'px';
 			inpCloneStyle.top = obj.offsetTop+'px';
+			obj.setAttribute(oldValAttr, obj.value);
 		}
 		var IEwatchChange = function(e){
-			var e = window.event || e,
+			var e = win.event || e,
 				maxLen = obj.getAttributeNode('maxlength'),
 				maxLen = maxLen && parseInt(maxLen.nodeValue);
+			
 			if(e.type == 'selectionchange' || e.propertyName == "value"){
 				var objVal = obj.value;
-				if(placeholder){
-					if(objVal === '') inputClone.value = placeholder;
-					else inputClone.value = '';
+				if(obj.getAttribute(oldValAttr) !== objVal){
+					if(placeholder){
+						if(objVal === '') inputClone.value = placeholder;
+						else inputClone.value = '';
+					}
+					//input的maxlength所有浏览器都支持，只有TEXTAREA不支持
+					if(maxLen && obj.nodeName == 'TEXTAREA' && objVal.length > maxLen){
+						obj.value = objVal.substring(0, maxLen);
+					}
+					obj.setAttribute(oldValAttr, obj.value);
+					fn && fn.call(obj, e);
 				}
-				//input的maxlength所有浏览器都支持，只有TEXTAREA不支持
-				if(maxLen && obj.nodeName == 'TEXTAREA' && objVal.length > maxLen){
-					obj.value = objVal.substring(0, maxLen);
-				}
-				fn && fn.call(obj, e);
 			}
 		};
-		if(!window.XMLHttpRequest){
+		if(!win.XMLHttpRequest){
 			//IE6无法聚焦修复
 			obj.attachEvent('onclick',function(){
 				obj.focus();
@@ -95,22 +104,22 @@ function iChange(id, fn){
 			});
 		}
 		//现代型事件绑定
-		obj.attachEvent("onfocus", function(){
+		/*obj.attachEvent("onfocus", function(){
 			//主要解决IE9中oncontextmenu delete or cut and backspace事件在onpropertychange时不响应
 			document.attachEvent("onselectionchange", IEwatchChange);
-		});
+		});*/
 		
 		obj.attachEvent("onpropertychange", IEwatchChange);
 		
-		obj.attachEvent("onblur", function(){
+		/*obj.attachEvent("onblur", function(){
 			document.detachEvent("onselectionchange", IEwatchChange);
-		});
+		});*/
 		
 		//事件全部绑定后再插入，尽量减少对dom重复渲染
 		if(placeholder){
-			obj.style.backgroundColor = 'transparent';
+			objstyle.backgroundColor = 'transparent';
 			//IE6,8,9 input在将输入框背景设成透明时无法聚焦bug修复
-			obj.style.backgroundImage = 'url(about:blank)';
+			objstyle.backgroundImage = 'url(about:blank)';
 			obj.parentNode.insertBefore(inputClone, obj);
 		}
 	}
@@ -122,9 +131,10 @@ function iChange(id, fn){
 //纯数字输入框
 iChange('input', function(e){
 	var oldVal = this.value;
-	if(/\D/g.test(oldVal)){
+	this.value = oldVal.replace(/\D/g, '');
+	/*if(/\D/g.test(oldVal)){
 		this.value = oldVal.replace(/\D/g, '');
-	}
+	}*/
 });
 
 //实时响应用户输入，提示用户还能输入多少字符
