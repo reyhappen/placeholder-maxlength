@@ -91,7 +91,11 @@ function iChange(id, fn){
 						obj.value = objVal.substring(0, maxLen);
 					}
 					obj.setAttribute(oldValAttr, obj.value);
+					//两次直接改值会造成光标到开头位置的bug，方法一：延迟后调用回调；方法二：回调中使用正则匹配一遍后再执行赋值
 					fn && fn.call(obj, e);
+					/*setTimeout(function(){
+						fn && fn.call(obj, e);
+					}, 0);*/
 				}
 			}
 		};
@@ -105,16 +109,16 @@ function iChange(id, fn){
 			});
 		}
 		//现代型事件绑定
-		/*obj.attachEvent("onfocus", function(){
+		obj.attachEvent("onfocus", function(){
 			//主要解决IE9中oncontextmenu delete or cut and backspace事件在onpropertychange时不响应
 			document.attachEvent("onselectionchange", IEwatchChange);
-		});*/
+		});
 		
 		obj.attachEvent("onpropertychange", IEwatchChange);
 		
-		/*obj.attachEvent("onblur", function(){
+		obj.attachEvent("onblur", function(){
 			document.detachEvent("onselectionchange", IEwatchChange);
-		});*/
+		});
 		
 		//事件全部绑定后再插入，尽量减少对dom重复渲染
 		if(placeholder){
@@ -132,10 +136,10 @@ function iChange(id, fn){
 //纯数字输入框
 iChange('input', function(e){
 	var oldVal = this.value;
-	this.value = oldVal.replace(/\D/g, '');
-	/*if(/\D/g.test(oldVal)){
+	//this.value = oldVal.replace(/\D/g, '');
+	if(/\D/g.test(oldVal)){
 		this.value = oldVal.replace(/\D/g, '');
-	}*/
+	}
 });
 
 //实时响应用户输入，提示用户还能输入多少字符
