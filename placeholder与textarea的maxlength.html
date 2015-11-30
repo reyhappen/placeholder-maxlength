@@ -72,7 +72,7 @@ function iChange(id, fn){
 			}
 			inpCloneStyle.left = obj.offsetLeft+'px';
 			inpCloneStyle.top = obj.offsetTop+'px';
-			obj.setAttribute(oldValAttr, obj.value);
+			obj[oldValAttr] = obj.value;
 		}
 		var IEwatchChange = function(e){
 			var e = win.event || e,
@@ -81,7 +81,7 @@ function iChange(id, fn){
 			
 			if(e.type == 'selectionchange' || e.propertyName == "value"){
 				var objVal = obj.value;
-				if(obj.getAttribute(oldValAttr) !== objVal){
+				if(obj[oldValAttr] !== objVal){
 					if(placeholder){
 						if(objVal === '') inputClone.value = placeholder;
 						else inputClone.value = '';
@@ -90,7 +90,7 @@ function iChange(id, fn){
 					if(maxLen && obj.nodeName == 'TEXTAREA' && objVal.length > maxLen){
 						obj.value = objVal.substring(0, maxLen);
 					}
-					obj.setAttribute(oldValAttr, obj.value);
+					obj[oldValAttr] = obj.value;
 					//两次直接改值会造成光标到开头位置的bug，方法一：延迟后调用回调；方法二：回调中使用正则匹配一遍后再执行赋值
 					fn && fn.call(obj, e);
 					/*setTimeout(function(){
@@ -136,10 +136,10 @@ function iChange(id, fn){
 //纯数字输入框
 iChange('input', function(e){
 	var oldVal = this.value;
-	//this.value = oldVal.replace(/\D/g, '');
-	if(/\D/g.test(oldVal)){
+	this.value = oldVal.replace(/\D/g, '');
+	/*if(/\D/g.test(oldVal)){
 		this.value = oldVal.replace(/\D/g, '');
-	}
+	}*/
 });
 
 //实时响应用户输入，提示用户还能输入多少字符
